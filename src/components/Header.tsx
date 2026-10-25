@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Search, TrendingUp } from 'lucide-react';
+import { Menu, X, Search, TrendingUp, RefreshCw } from 'lucide-react';
+import { useLiveGoldPrice } from '../hooks/useLiveGoldPrice';
 import { getSettings } from '../data/store';
 
 export default function Header() {
@@ -10,22 +11,59 @@ export default function Header() {
   const [silverDropdown, setSilverDropdown] = useState(false);
   const location = useLocation();
   const settings = getSettings();
+  const { goldPrice, silverPrice, goldPricePerGram18K, refresh } = useLiveGoldPrice(60000); // Refresh every 60 seconds
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="sticky top-0 z-50 bg-gray-950 border-b border-yellow-600/30">
-      {/* Price Ticker */}
+      {/* Live Price Ticker */}
       <div className="bg-gradient-to-r from-yellow-900/40 via-yellow-800/30 to-yellow-900/40 py-1.5 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-yellow-400" />
-            <span className="text-yellow-400 font-medium text-sm">18K Gold</span>
-            <span className="text-white font-bold text-sm">${settings.goldPrice18k.toFixed(2)}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-yellow-400" />
+              <span className="text-yellow-400 font-medium text-sm">18K Gold</span>
+              {goldPrice.loading ? (
+                <span className="text-gray-400 text-sm">Loading...</span>
+              ) : goldPrice.error ? (
+                <span className="text-red-400 text-sm">Error</span>
+              ) : (
+                <span className="text-white font-bold text-sm">${goldPricePerGram18K.toFixed(2)}/g</span>
+              )}
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-gray-400 text-xs">24K Gold</span>
+              {goldPrice.loading ? (
+                <span className="text-gray-400 text-xs">Loading...</span>
+              ) : goldPrice.error ? (
+                <span className="text-red-400 text-xs">Error</span>
+              ) : (
+                <span className="text-gray-300 text-xs font-medium">${goldPrice.price.toFixed(2)}/oz</span>
+              )}
+            </div>
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-gray-400 text-xs">Silver</span>
+              {silverPrice.loading ? (
+                <span className="text-gray-400 text-xs">Loading...</span>
+              ) : silverPrice.error ? (
+                <span className="text-red-400 text-xs">Error</span>
+              ) : (
+                <span className="text-gray-300 text-xs font-medium">${silverPrice.price.toFixed(2)}/oz</span>
+              )}
+            </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-gray-400 text-xs">Silver</span>
-            <span className="text-gray-300 text-xs font-medium">${settings.silverPrice.toFixed(2)}/oz</span>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500 text-xs hidden lg:block">
+              Updated: {goldPrice.updatedAt || '...'}
+            </span>
+            <button
+              onClick={refresh}
+              className="text-gray-400 hover:text-yellow-400 transition-colors"
+              title="Refresh prices"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${goldPrice.loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
       </div>

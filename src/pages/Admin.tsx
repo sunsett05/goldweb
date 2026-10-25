@@ -1,8 +1,32 @@
 import { useState, useEffect } from 'react';
 import { getSettings, saveSettings, getProducts, saveProducts, getCategories, saveCategories, resetToDefaults, SiteSettings, Product, Category } from '../data/store';
-import { Save, Plus, Trash2, RotateCcw, Settings, Package, FolderOpen, TrendingUp, AlertCircle, Edit, Search, X, HelpCircle } from 'lucide-react';
+import { isAdminLoggedIn, logoutAdmin, removePassword } from '../data/auth';
+import LoginPage from './LoginPage';
+import { Save, Plus, Trash2, RotateCcw, Settings, Package, FolderOpen, TrendingUp, AlertCircle, Edit, Search, X, HelpCircle, LogOut, Key } from 'lucide-react';
 
 export default function Admin() {
+  const [isLoggedIn, setIsLoggedIn] = useState(isAdminLoggedIn());
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    logoutAdmin();
+    setIsLoggedIn(false);
+  };
+
+  const handleRemovePassword = () => {
+    if (confirm('Are you sure you want to remove password protection? Anyone will be able to access the admin panel.')) {
+      removePassword();
+      logoutAdmin();
+      setIsLoggedIn(false);
+    }
+  };
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
   const [activeTab, setActiveTab] = useState<'settings' | 'products' | 'categories'>('settings');
   const [settings, setSettings] = useState<SiteSettings>(getSettings());
   const [products, setProducts] = useState<Product[]>(getProducts());
@@ -116,18 +140,33 @@ export default function Admin() {
             </h1>
             <p className="text-gray-500 text-sm mt-1">Control everything on your website</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             {saved && (
               <span className="text-green-400 text-sm flex items-center gap-1">
                 ✓ Saved successfully
               </span>
             )}
             <button
+              onClick={handleRemovePassword}
+              className="flex items-center gap-2 bg-gray-800 border border-gray-700 text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+              title="Remove password protection"
+            >
+              <Key className="w-4 h-4" />
+              Remove Password
+            </button>
+            <button
               onClick={handleReset}
               className="flex items-center gap-2 bg-red-900/30 border border-red-600/30 text-red-400 px-4 py-2 rounded-lg hover:bg-red-900/50 transition-colors text-sm"
             >
               <RotateCcw className="w-4 h-4" />
               Reset to Defaults
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-yellow-600/20 border border-yellow-600/30 text-yellow-400 px-4 py-2 rounded-lg hover:bg-yellow-600/30 transition-colors text-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
             </button>
           </div>
         </div>
