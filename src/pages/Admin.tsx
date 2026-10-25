@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSettings, saveSettings, getProducts, saveProducts, getCategories, saveCategories, resetToDefaults, SiteSettings, Product, Category } from '../data/store';
-import { Save, Plus, Trash2, RotateCcw, Settings, Package, FolderOpen, TrendingUp, AlertCircle } from 'lucide-react';
+import { Save, Plus, Trash2, RotateCcw, Settings, Package, FolderOpen, TrendingUp, AlertCircle, Edit, Search, X, HelpCircle } from 'lucide-react';
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<'settings' | 'products' | 'categories'>('settings');
@@ -10,6 +10,9 @@ export default function Admin() {
   const [saved, setSaved] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     if (saved) {
@@ -43,11 +46,20 @@ export default function Admin() {
     }
   };
 
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; product: Product | null }>({ show: false, product: null });
+
   const handleDeleteProduct = (id: string) => {
-    if (confirm('Delete this product?')) {
-      const updated = products.filter(p => p.id !== id);
+    const product = products.find(p => p.id === id);
+    setDeleteConfirm({ show: true, product: product || null });
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm.product) {
+      const updated = products.filter(p => p.id !== deleteConfirm.product!.id);
       setProducts(updated);
       saveProducts(updated);
+      setDeleteConfirm({ show: false, product: null });
+      setSaved(true);
     }
   };
 
@@ -328,29 +340,94 @@ export default function Admin() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div>
+            {/* Header with Add Button */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-gray-400 text-sm">{products.length} products total</p>
+              <div>
+                <p className="text-gray-400 text-sm">{products.length} products total</p>
+                <button
+                  onClick={() => setShowHelp(!showHelp)}
+                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1"
+                >
+                  <HelpCircle className="w-3 h-3" /> How to manage products
+                </button>
+              </div>
               <button
-                onClick={() => setShowAddProduct(true)}
+                onClick={() => {
+                  setShowAddProduct(true);
+                  setEditingProduct(null);
+                }}
                 className="flex items-center gap-2 bg-yellow-600/20 text-yellow-400 px-4 py-2 rounded-lg hover:bg-yellow-600/30 transition-colors text-sm font-medium"
               >
                 <Plus className="w-4 h-4" /> Add Product
               </button>
             </div>
 
-            {/* Image Upload Info */}
-            <div className="mb-6 p-4 bg-blue-900/10 border border-blue-600/20 rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="text-blue-400 font-medium mb-1">📸 Adding Product Images</p>
-                <p className="text-gray-400">
-                  You can add images to products by pasting an image URL. Use free hosting services like{' '}
-                  <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">Imgur</a>,{' '}
-                  <a href="https://postimages.org" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">PostImages</a>, or{' '}
-                  <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">ImgBB</a>{' '}
-                  to upload images and get a direct link. If no image URL is set, the emoji icon will be shown instead.
-                </p>
+            {/* Help Section */}
+            {showHelp && (
+              <div className="mb-6 p-5 bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-600/30 rounded-xl">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-blue-400 font-semibold text-lg">📖 How to Manage Your Products</h3>
+                  <button onClick={() => setShowHelp(false)} className="text-gray-500 hover:text-white">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="space-y-3 text-sm text-gray-300">
+                  <div className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">➕</span>
+                    <div>
+                      <p className="font-medium text-white">Add New Product</p>
+                      <p className="text-gray-400">Click the "Add Product" button above, fill in the details, and click "Add Product" to save.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">✏️</span>
+                    <div>
+                      <p className="font-medium text-white">Edit Existing Product</p>
+                      <p className="text-gray-400">Click the "Edit" button next to any product, make your changes, and click "Update Product".</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">🗑️</span>
+                    <div>
+                      <p className="font-medium text-white">Remove Product</p>
+                      <p className="text-gray-400">Click the trash icon next to any product. You'll be asked to confirm before deletion.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-yellow-400 font-bold">🔍</span>
+                    <div>
+                      <p className="font-medium text-white">Search & Filter</p>
+                      <p className="text-gray-400">Use the search box to find products by name, or filter by category using the dropdown.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
+            )}
+
+            {/* Search and Filter */}
+            <div className="flex gap-3 mb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
+                />
+              </div>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
+              >
+                <option value="all">All Categories</option>
+                <option value="gold">Gold</option>
+                <option value="silver">Silver</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Add Product Form */}
@@ -374,34 +451,63 @@ export default function Admin() {
 
             {/* Products List */}
             <div className="space-y-2">
-              {products.map(product => (
-                <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4 hover:border-gray-700 transition-colors">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded object-cover border border-gray-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  ) : (
-                    <span className="text-2xl w-10 h-10 flex items-center justify-center">{product.image}</span>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-medium text-sm truncate">{product.name}</h3>
-                    <p className="text-gray-500 text-xs">{product.category} / {product.subcategory} {product.karat && `• ${product.karat}`} {product.imageUrl && '• 📷'}</p>
+              {(() => {
+                const filtered = products.filter(p => {
+                  const matchesSearch = !searchQuery || 
+                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    p.description?.toLowerCase().includes(searchQuery.toLowerCase());
+                  const matchesCategory = filterCategory === 'all' || 
+                    p.category === filterCategory || 
+                    p.subcategory === filterCategory;
+                  return matchesSearch && matchesCategory;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-12 bg-gray-900 border border-gray-800 rounded-lg">
+                      <p className="text-gray-500">No products found</p>
+                      <p className="text-gray-600 text-sm mt-1">Try adjusting your search or filter</p>
+                    </div>
+                  );
+                }
+
+                return filtered.map(product => (
+                  <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4 hover:border-gray-700 transition-colors group">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.name} className="w-12 h-12 rounded object-cover border border-gray-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                      <span className="text-2xl w-12 h-12 flex items-center justify-center bg-gray-800 rounded">{product.image}</span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-medium text-sm truncate">{product.name}</h3>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {product.category} / {product.subcategory}
+                        {product.karat && <span className="ml-2 text-yellow-600">{product.karat}</span>}
+                        {product.weight && <span className="ml-2">• {product.weight}</span>}
+                        {product.imageUrl && <span className="ml-2">• 📷</span>}
+                      </p>
+                    </div>
+                    <span className="text-yellow-400 font-bold text-sm whitespace-nowrap">${product.price.toFixed(2)}</span>
+                    <div className="flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          setEditingProduct(product);
+                          setShowAddProduct(false);
+                        }}
+                        className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs bg-blue-900/20 px-3 py-1.5 rounded transition-colors"
+                      >
+                        <Edit className="w-3 h-3" /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs bg-red-900/20 px-3 py-1.5 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" /> Delete
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-yellow-400 font-bold text-sm">${product.price.toFixed(2)}</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingProduct(product)}
-                      className="text-gray-400 hover:text-yellow-400 text-xs bg-gray-800 px-3 py-1.5 rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="text-red-400 hover:text-red-300 p-1.5 bg-red-900/20 rounded transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </div>
         )}
@@ -486,6 +592,33 @@ export default function Admin() {
                 Changes to categories are saved individually. Make sure to click "Save" on each category after editing. 
                 The slug must match the subcategory field in products for them to appear correctly.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirm.show && deleteConfirm.product && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold text-white mb-3">Delete Product</h3>
+              <p className="text-gray-400 mb-4">
+                Are you sure you want to delete <span className="text-white font-medium">"{deleteConfirm.product.name}"</span>? 
+                This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm({ show: false, product: null })}
+                  className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
