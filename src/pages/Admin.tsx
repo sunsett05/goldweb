@@ -328,7 +328,7 @@ export default function Admin() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <p className="text-gray-400 text-sm">{products.length} products total</p>
               <button
                 onClick={() => setShowAddProduct(true)}
@@ -336,6 +336,21 @@ export default function Admin() {
               >
                 <Plus className="w-4 h-4" /> Add Product
               </button>
+            </div>
+
+            {/* Image Upload Info */}
+            <div className="mb-6 p-4 bg-blue-900/10 border border-blue-600/20 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="text-blue-400 font-medium mb-1">📸 Adding Product Images</p>
+                <p className="text-gray-400">
+                  You can add images to products by pasting an image URL. Use free hosting services like{' '}
+                  <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">Imgur</a>,{' '}
+                  <a href="https://postimages.org" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">PostImages</a>, or{' '}
+                  <a href="https://imgbb.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:underline">ImgBB</a>{' '}
+                  to upload images and get a direct link. If no image URL is set, the emoji icon will be shown instead.
+                </p>
+              </div>
             </div>
 
             {/* Add Product Form */}
@@ -361,10 +376,14 @@ export default function Admin() {
             <div className="space-y-2">
               {products.map(product => (
                 <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center gap-4 hover:border-gray-700 transition-colors">
-                  <span className="text-2xl">{product.image}</span>
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-10 h-10 rounded object-cover border border-gray-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : (
+                    <span className="text-2xl w-10 h-10 flex items-center justify-center">{product.image}</span>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-medium text-sm truncate">{product.name}</h3>
-                    <p className="text-gray-500 text-xs">{product.category} / {product.subcategory} {product.karat && `• ${product.karat}`}</p>
+                    <p className="text-gray-500 text-xs">{product.category} / {product.subcategory} {product.karat && `• ${product.karat}`} {product.imageUrl && '• 📷'}</p>
                   </div>
                   <span className="text-yellow-400 font-bold text-sm">${product.price.toFixed(2)}</span>
                   <div className="flex gap-2">
@@ -491,6 +510,7 @@ function ProductForm({ product, onSave, onCancel, categories }: {
     weight: '',
     karat: '',
     image: '🥇',
+    imageUrl: '',
     description: '',
   });
 
@@ -576,7 +596,23 @@ function ProductForm({ product, onSave, onCancel, categories }: {
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
           />
         </div>
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-3">
+          <label className="text-gray-400 text-xs mb-1 block">Product Image URL (optional - paste any image link)</label>
+          <input
+            type="url"
+            value={form.imageUrl || ''}
+            onChange={e => setForm({ ...form, imageUrl: e.target.value })}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
+            placeholder="https://example.com/product-image.jpg"
+          />
+          {form.imageUrl && (
+            <div className="mt-2">
+              <p className="text-gray-500 text-xs mb-1">Preview:</p>
+              <img src={form.imageUrl} alt="Preview" className="w-20 h-20 object-cover rounded border border-gray-700" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+          )}
+        </div>
+        <div className="sm:col-span-2 lg:col-span-3">
           <label className="text-gray-400 text-xs mb-1 block">Description</label>
           <input
             type="text"

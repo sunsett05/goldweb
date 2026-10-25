@@ -19,7 +19,15 @@ export default function ProductGrid({ products, title }: ProductGridProps) {
           >
             {/* Image/Emoji placeholder */}
             <div className="aspect-square bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative overflow-hidden">
-              <span className="text-6xl group-hover:scale-110 transition-transform duration-300">{product.image}</span>
+              {product.imageUrl ? (
+                <img 
+                  src={product.imageUrl} 
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+              ) : (
+                <span className="text-6xl group-hover:scale-110 transition-transform duration-300">{product.image}</span>
+              )}
               {product.karat && (
                 <span className="absolute top-3 right-3 bg-yellow-600/90 text-white text-xs font-bold px-2 py-1 rounded-full">
                   {product.karat}

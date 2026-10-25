@@ -8,6 +8,7 @@ export interface Product {
   weight?: string;
   karat?: string;
   image: string;
+  imageUrl?: string;
   description?: string;
 }
 
